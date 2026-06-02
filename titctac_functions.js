@@ -1,18 +1,33 @@
 let turn = 1;
+let controller = null;
+let gameStarted = false;
+let player1 = player();
+let player2 = player();
+let board = gameBoard();
 const startGameBtn = document.getElementById('start-game');
 startGameBtn.addEventListener('click', () => {
     let player1Name = prompt("Enter player 1 name:");
-    const player1 = player(player1Name);
+    player1.setName(player1Name);
     let player2Name = prompt("Enter player 2 name:");
-    const player2 = player(player2Name);
-    
-    const controller = gameController(player1, player2);
-    
+    player2.setName(player2Name);
+
+    board.clearBoard();
+    controller = gameController(player1, player2, board);
+    gameStarted = true;
+    this.disabled = true;
 }) 
 const gridBlocks = document.querySelectorAll('.grid-square');
 gridBlocks.forEach((block, index) => {
     block.addEventListener('click', () => {
-        controller.playRound(index);
+        if (gameStarted && !board.isOccupied(index)) {
+            winner = controller.playRound(index);
+            if (winner > 0) {
+                let message = winner === 1 ? `${player1.getName()} won!` : `${player2.getName()} won!`
+                alert(message);
+                gameStarted = false;
+                startGameBtn.disabled = false;
+            }
+        }
     })
 })
 
@@ -58,12 +73,16 @@ function gameBoard() {
 
     const clearBoard = () => {
         grid = Array.from({ length: 9}, () => 0);
+        gridBlocks.forEach((block, index) => {
+            block.replaceChildren();
+            block.style.background = "transparent";
+        });
     }
 
     return { setCoordinate, clearBoard, checkWinner, isOccupied };
 }
 
-function player(name) {
+function player() {
     let score = 0;
     let user = name;
 
@@ -71,13 +90,21 @@ function player(name) {
         score++;
     }
 
-    return { addWin };
+    const setName = (name) => {
+        user = name;
+    }
+
+    const getName = () => {
+        return user;
+    }
+
+    return { addWin, setName, getName };
 }
 
-function gameController(player1, player2) {
+function gameController(player1, player2, boardNew) {
     const playerOne = player1;
     const playerTwo = player2;
-    const board = gameBoard();
+    const board = boardNew;
 
     const playRound = (coordinate) => {
         if (!board.isOccupied(coordinate)) {
